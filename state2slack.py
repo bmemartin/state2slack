@@ -27,17 +27,17 @@ class HomeAssistant:
 
 
 @dataclass
-class SlackChannel:
-    """The configuration for Slack channel message requests.
+class SlackState:
+    """The configuration for Slack state message issuance.
 
     Attributes:
-        url (str): The webhook URL to send messages to a channel.
-        channel (str): The channel ID to send the messages to.
-        message (str): The message to send to the channel.
+        webhook_url (str): The webhook URL for sending state messages.
+        message (str): The message content.
+        target_id (str, optional): The target ID of the message recipient. Defaults to None.
     """
-    url: str
-    channel: str
+    webhook_url: str
     message: str
+    target_id: str = None
 
 
 @dataclass
@@ -58,24 +58,24 @@ class Config:
 
     Attributes:
         home_assistant (HomeAssistant): The Home Assistant configuration.
-        slack_channels (dict[str, SlackChannel]): The Slack channel configuration.
+        slack_states (dict[str, Optional[SlackState]]): The Slack state configuration.
         slack_user (SlackUser): The Slack user configuration.
     """
     home_assistant: HomeAssistant
-    slack_channels: dict[str, SlackChannel]
+    slack_states: dict[str, Optional[SlackState]]
     slack_user: SlackUser
 
-    def slack_channel(self, value: str) -> SlackChannel:
-        """Returns the SlackChannel object corresponding to the given value.
-        If no SlackChannel object exists for the given value, the default SlackChannel object is returned.
+    def slack_state(self, value: str) -> SlackState:
+        """Returns the SlackState object corresponding to the given value.
+        If no SlackState object exists for the given value, the default SlackState object is returned.
 
         Args:
-            value (str): The value to search for in the SlackChannel objects.
+            value (str): The value to search for in the SlackState collection.
 
         Returns:
-            SlackChannel: The SlackChannel object corresponding to the given value, or the default SlackChannel object if no match is found.
+            SlackState: The SlackState object corresponding to the given value, or the default SlackState object if no match is found.
         """
-        return self.slack_channels.get(str(value).lower(), self.slack_channels.get('default'))
+        return self.slack_states.get(str(value).lower(), self.slack_states.get('default'))
 
 
 def parse_args():
@@ -215,16 +215,19 @@ def post_slack_api(url: str, json: Any) -> bool:
     return response.json().get('ok', False)
 
 
-def post_slack_channel_message(config: SlackChannel) -> bool:
-    """Posts a message to a Slack channel using the provided configuration.
+def send_slack_state_message(config: SlackState) -> bool:
+    """Sends a message to a Slack webhook using the provided configuration.
 
     Args:
-        config (SlackChannel): The Slack channel configuration object.
+        config (SlackState): The SlackState object.
 
     Returns:
-        bool: True if the message was posted successfully, False otherwise.
+        bool: True if the message was sent successfully, False otherwise.
     """
-    return post_slack_api(config.url, {'channel_id': config.channel, 'message': config.message})
+    payload = {'message': config.message}
+    if config.target_id is not None:
+        payload['target_id'] = config.target_id
+    return post_slack_api(config.webhook_url, payload)
 
 
 def post_slack_user_message(config: SlackUser, message: str) -> bool:
@@ -263,18 +266,23 @@ def main():
     if entity_state is None:
         entity_state = get_entity_state(config.home_assistant)
 
-    # retrieve Slack channel configuration based on entity state
-    slack_channel = config.slack_channel(entity_state)
+    # retrieve Slack state configuration based on entity state
+    slack_state = config.slack_state(entity_state)
 
-    # post message to Slack channel
-    success = post_slack_channel_message(slack_channel)
+    # skip sending a Slack message entity state is undefined
+    if slack_state is None:
+        logging.warning('No Slack configuration found. Skipping message issuance')
+        return
+
+    # send state message to Slack
+    success = send_slack_state_message(slack_state)
 
     # determine summary message and post to the Slack user
     if success:
-        summary = f"Successfully posted '{slack_channel.message}' to {slack_channel.channel}"
+        summary = f"Successfully posted '{slack_state.message}' to {slack_state.target_id}"
         logging.info(summary)
     else:
-        summary = f"Failed to post '{slack_channel.message}' to {slack_channel.channel}"
+        summary = f"Failed to post '{slack_state.message}' to {slack_state.target_id}"
         logging.error(summary)
     post_slack_user_message(config.slack_user, summary)
 

@@ -25,25 +25,25 @@ home_assistant:
   # (Optional) True to ignore verifying the SSL certificate.
   insecure: false
 
-# The configuration for Slack channel message requests.
-slack_channels:
-  # The default, fallback, configuration.
+# The configuration for Slack state message issuance.
+slack_states:
+  # The default, or fallback, state.
   default:
-    # The webhook URL to send messages to a channel.
-    url:
+    # The webhook URL for sending state messages.
+    webhook_url:
 
-    # The channel ID to send the messages to.
-    channel:
-
-    # The message to send to the channel.
+    # The message content.
     message:
 
-# Custom Home Assistant entity state values, as lowercase.
-# The following example uses 'work' but any word value is accepted.
+    # (Optional) The target ID of the message recipient.
+    target_id:
+
+  # Custom Home Assistant entity state values, as lowercase.
+  # The following example uses 'work' but any word value is accepted.
 # work:
-#   url:
-#   channel:
+#   webhook_url:
 #   message:
+#   target_id:
 
 # The configuration for Slack user message requests.
 slack_user:
