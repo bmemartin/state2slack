@@ -246,8 +246,27 @@ def send_slack_summary_message(config: SlackSummary, message: str) -> bool:
     return post_slack_webhook(config.webhook_url, payload)
 
 
+def build_summary_message(config: SlackState, success: bool) -> str:
+    """Build a summary message based on the success of a Slack webhook request.
+
+    Args:
+        config (SlackState): The SlackState object.
+        success (bool): True if the message was successfully sent.
+
+    Returns:
+        str: A summary message indicating the outcome of sending a Slack message.
+    """
+    if success:
+        summary = f'Successfully sent "{config.message}"'
+    else:
+        summary = f'Failed to send "{config.message}"'
+    if config.target_id is not None:
+        summary += f' to {config.target_id}'
+    return summary
+
+
 def main():
-    """Main function to post office presence to a Slack channel.
+    """Main function to send a curated message to Slack based on a Home Assistant entity's state.
     """
     # parse command line arguments
     args = parse_args()
@@ -268,6 +287,9 @@ def main():
     # fetch entity state if override not provided
     if entity_state is None:
         entity_state = get_entity_state(config.home_assistant)
+        logging.info(f'Entity state identified as {entity_state}')
+    else:
+        logging.info(f'Entity state manually set to {entity_state}. Skipping entity discovery')
 
     # retrieve Slack state configuration based on entity state
     slack_state = config.slack_state(entity_state)
@@ -280,13 +302,9 @@ def main():
     # send state message to Slack
     success = send_slack_state_message(slack_state)
 
-    # determine summary message
-    if success:
-        summary = f"Successfully posted '{slack_state.message}' to {slack_state.target_id}"
-        logging.info(summary)
-    else:
-        summary = f"Failed to post '{slack_state.message}' to {slack_state.target_id}"
-        logging.error(summary)
+    # build and log summary message
+    summary = build_summary_message(slack_state, success)
+    logging.info(summary) if success else logging.warning(summary)
 
     # send summary message to Slack, if configured
     if config.slack_summary:
