@@ -45,13 +45,13 @@ slack_states:
 #   message:
 #   target_id:
 
-# The configuration for Slack user message requests.
-slack_user:
-  # The webhook URL to send messages to a user.
-  url:
+# The configuration for Slack summary message issuance.
+slack_summary:
+  # The webhook URL for sending summary messages.
+  webhook_url:
 
-  # The user ID of the recipient of the messages.
-  user_id:
+  # (Optional) The target ID of the message recipient.
+  target_id:
 ```
 
 ## 🚀 Usage

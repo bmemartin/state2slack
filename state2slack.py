@@ -41,15 +41,15 @@ class SlackState:
 
 
 @dataclass
-class SlackUser:
-    """The configuration for Slack user message requests.
+class SlackSummary:
+    """The configuration for Slack summary message issuance.
 
     Attributes:
-        url (str): The webhook URL to send messages to a user.
-        user_id (str): The user ID of the recipient of the messages.
+        webhook_url (str): The webhook URL for sending summary messages.
+        target_id (str, optional): The target ID of the message recipient. Defaults to None.
     """
-    url: str
-    user_id: str
+    webhook_url: str
+    target_id: str = None
 
 
 @dataclass
@@ -59,11 +59,11 @@ class Config:
     Attributes:
         home_assistant (HomeAssistant): The Home Assistant configuration.
         slack_states (dict[str, Optional[SlackState]]): The Slack state configuration.
-        slack_user (SlackUser): The Slack user configuration.
+        slack_summary (SlackSummary, optional): The Slack summary configuration. Defaults to None.
     """
     home_assistant: HomeAssistant
     slack_states: dict[str, Optional[SlackState]]
-    slack_user: SlackUser
+    slack_summary: SlackSummary = None
 
     def slack_state(self, value: str) -> SlackState:
         """Returns the SlackState object corresponding to the given value.
@@ -230,17 +230,20 @@ def send_slack_state_message(config: SlackState) -> bool:
     return post_slack_api(config.webhook_url, payload)
 
 
-def post_slack_user_message(config: SlackUser, message: str) -> bool:
-    """Posts a message to a Slack user using the provided configuration.
+def send_slack_summary_message(config: SlackSummary, message: str) -> bool:
+    """Sends a message to a Slack webhook using the provided configuration.
 
     Args:
-        config (SlackUser): The Slack user configuration object.
-        message (str): The message to send to the Slack user.
+        config (SlackSummary): The SlackSummary object.
+        message (str): The message content.
 
     Returns:
-        bool: True if the message was successfully posted, False otherwise.
+        bool: True if the message was successfully sent, False otherwise.
     """
-    return post_slack_api(config.url, {'user_id': config.user_id, 'message': message})
+    payload = {'message': message}
+    if config.target_id is not None:
+        payload['target_id'] = config.target_id
+    return post_slack_api(config.webhook_url, payload)
 
 
 def main():
@@ -277,14 +280,17 @@ def main():
     # send state message to Slack
     success = send_slack_state_message(slack_state)
 
-    # determine summary message and post to the Slack user
+    # determine summary message
     if success:
         summary = f"Successfully posted '{slack_state.message}' to {slack_state.target_id}"
         logging.info(summary)
     else:
         summary = f"Failed to post '{slack_state.message}' to {slack_state.target_id}"
         logging.error(summary)
-    post_slack_user_message(config.slack_user, summary)
+
+    # send summary message to Slack, if configured
+    if config.slack_summary:
+        send_slack_summary_message(config.slack_summary, summary)
 
 
 if __name__ == "__main__":
