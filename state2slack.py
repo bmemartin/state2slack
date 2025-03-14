@@ -16,12 +16,12 @@ class HomeAssistant:
 
     Attributes:
         url (str): The URL of Home Assistant.
-        token (str): The access token for authentication.
+        access_token (str): The long-lived access token for authentication.
         entity_id (str): The entity ID to trigger based on state.
         insecure (bool, optional): True to ignore verifying the SSL certificate, False otherwise. Defaults to False.
     """
     url: str
-    token: str
+    access_token: str
     entity_id: str
     insecure: bool = False
 
@@ -157,7 +157,7 @@ def get_entity_state(config: HomeAssistant) -> Optional[str]:
         Optional[str]: The state of the entity, or None if the entity was not found or an error occurred.
     """
     url = f'{config.url}/api/states'
-    headers = {'Authorization': f'Bearer {config.token}'}
+    headers = {'Authorization': f'Bearer {config.access_token}'}
 
     try:
         response = requests.get(url, headers=headers, verify=config.insecure)

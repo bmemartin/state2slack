@@ -16,8 +16,8 @@ home_assistant:
   # The URL of Home Assistant.
   url:
 
-  # The access token for authentication.
-  token:
+  # The long-lived access token for authentication.
+  access_token:
 
   # The entity ID to trigger based on state.
   entity_id:
