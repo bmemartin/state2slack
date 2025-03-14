@@ -184,11 +184,11 @@ def get_entity_state(config: HomeAssistant) -> Optional[str]:
     return entity.get('state')
 
 
-def post_slack_api(url: str, json: Any) -> bool:
-    """Send a POST request to the Slack API and return True if the request was successful.
+def post_slack_webhook(url: str, json: Any) -> bool:
+    """Send a POST request to the Slack webhook URL and return True if the request was successful.
 
     Args:
-        url (str): The URL of the Slack API endpoint.
+        url (str): The URL of the Slack webhook.
         json (Any): The JSON payload to send in the request body.
 
     Returns:
@@ -227,7 +227,7 @@ def send_slack_state_message(config: SlackState) -> bool:
     payload = {'message': config.message}
     if config.target_id is not None:
         payload['target_id'] = config.target_id
-    return post_slack_api(config.webhook_url, payload)
+    return post_slack_webhook(config.webhook_url, payload)
 
 
 def send_slack_summary_message(config: SlackSummary, message: str) -> bool:
@@ -243,7 +243,7 @@ def send_slack_summary_message(config: SlackSummary, message: str) -> bool:
     payload = {'message': message}
     if config.target_id is not None:
         payload['target_id'] = config.target_id
-    return post_slack_api(config.webhook_url, payload)
+    return post_slack_webhook(config.webhook_url, payload)
 
 
 def main():
