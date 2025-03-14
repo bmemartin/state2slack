@@ -1,12 +1,14 @@
 # State2Slack
 
-State2Slack fetches the state of a Home Assistant entity, translates the state value into a designated Slack channel and message, and delivers the message accordingly. Additionally, a confirmation message detailing the completion and outcomes is sent to a Slack user.
+State2Slack automates Slack message posting based on the state of a Home Assistant entity.
 
-Log files record the completion history for a given day and ensure tasks are not re-executed within the same day.
+It retrieves an entity's state and maps it to a configurable Slack webhook URL, message, and optional target ID. These values are then used to send a message to Slack via a webhook request. If configured, a summary of the execution results is sent to a designated Slack webhook.
+
+Log files track execution history and, if maintained, prevent re-execution within the same day.
 
 ## ⚙️ Configuration
 
-The following configuration is to be provided in the file `config.yaml`
+Configuration is provided through a YAML file. Unless specified via command-line options, State2Slack defaults to using `config.yaml`.
 
 ```yaml
 ---
@@ -27,8 +29,9 @@ home_assistant:
 
 # The configuration for Slack state message issuance.
 slack_states:
-  # The default, or fallback, state.
-  default:
+  # One or more `ENTITY_STATE` entries representing lowercase entity state values.
+  # Use `default` to specify a fallback scenario.
+  ENTITY_STATE:
     # The webhook URL for sending state messages.
     webhook_url:
 
@@ -38,14 +41,7 @@ slack_states:
     # (Optional) The target ID of the message recipient.
     target_id:
 
-  # Custom Home Assistant entity state values, as lowercase.
-  # The following example uses 'work' but any word value is accepted.
-# work:
-#   webhook_url:
-#   message:
-#   target_id:
-
-# The configuration for Slack summary message issuance.
+# (Optional) The configuration for Slack summary message issuance.
 slack_summary:
   # The webhook URL for sending summary messages.
   webhook_url:
@@ -56,7 +52,7 @@ slack_summary:
 
 ## 🚀 Usage
 
-To execute the task
+To execute the automation
 
 ```shell
 python3 state2slack.py
