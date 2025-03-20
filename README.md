@@ -81,5 +81,5 @@ docker compose run --rm state2slack
 To run the container with command line options
 
 ```shell
-docker compose run --rm state2slack python3 state2slack.py --log DEBUG
+docker compose run --rm state2slack python3 state2slack.py --verbose
 ```
